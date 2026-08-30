@@ -93,6 +93,34 @@ def render():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # ── Weather City ──────────────────────────────────────────────────────
+        st.markdown(
+            f"<span style='font-size:0.88rem;color:{COLORS['text_secondary']};'>"
+            f"🌤️ Weather City</span>",
+            unsafe_allow_html=True,
+        )
+
+        current_city = st.session_state.get("weather_city", "Madanapalle")
+        new_city = st.text_input(
+            "Weather City",
+            value=current_city,
+            placeholder="e.g. Madanapalle, Hyderabad, Chennai",
+            label_visibility="collapsed",
+            key="weather_city_input",
+        )
+        if st.button("✅ Apply City", key="apply_weather_city"):
+            st.session_state["weather_city"] = new_city.strip()
+            st.success(f"Weather city set to: {new_city.strip()}")
+            st.rerun()
+
+        st.markdown(
+            f"<span style='font-size:0.75rem;color:{COLORS['text_muted']};'>"
+            f"Current: {current_city} — updates homepage weather widget.</span>",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
         # TTS toggle
         st.markdown(f"<span style='font-size:0.88rem; color:{COLORS['text_secondary']};'>"
                     f"Text-to-Speech (Read Aloud)</span>", unsafe_allow_html=True)

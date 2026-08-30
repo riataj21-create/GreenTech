@@ -128,6 +128,18 @@ def inject_global_css():
     ::-webkit-scrollbar-track {{ background: {COLORS['bg_secondary']}; }}
     ::-webkit-scrollbar-thumb {{ background: {COLORS['border']}; border-radius: 3px; }}
     ::-webkit-scrollbar-thumb:hover {{ background: {COLORS['accent_primary']}; }}
+    
+    /* ── Hide Streamlit's default page navigation (prevents duplicates) ── */
+    [data-testid="stSidebarNav"] {{
+        display: none !important;
+    }}
+    /* Also hide the nav UL that Streamlit injects above custom sidebar content */
+    section[data-testid="stSidebar"] > div:first-child > div:first-child ul {{
+        display: none !important;
+    }}
+    section[data-testid="stSidebar"] nav {{
+        display: none !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -142,6 +154,7 @@ def init_session_state():
         "advice_result":  None,
         "history":        [],
         "tts_enabled":    True,
+        "weather_city":   "",   # empty = use default from .env
         # Phase 3 – voice
         "voice_recording":    False,
         "voice_transcript":   "",
@@ -187,24 +200,20 @@ def render_sidebar():
         pages = ["🏠 Home", "🌾 Farmer Assistant", "📋 History", "⚙️ Settings", "ℹ️ About"]
         page_keys = ["Home", "Farmer Assistant", "History", "Settings", "About"]
 
-        # Build display → key map
-        labels = dict(zip(pages, page_keys))
+        # Find current index driven purely by session_state
+        current_index = page_keys.index(st.session_state["current_page"]) if st.session_state["current_page"] in page_keys else 0
 
-        # Find current index
-        current_label = next(
-            (lbl for lbl, key in labels.items()
-             if key == st.session_state["current_page"]),
-            pages[0]
-        )
-
-        selected_label = st.radio(
+        selected_index = st.radio(
             "Navigation",
-            options=pages,
-            index=pages.index(current_label),
+            options=range(len(pages)),
+            index=current_index,
+            format_func=lambda i: pages[i],
             label_visibility="collapsed",
-            key="nav_radio",
         )
-        st.session_state["current_page"] = labels[selected_label]
+        # Update only if user actually clicked a different item
+        if page_keys[selected_index] != st.session_state["current_page"]:
+            st.session_state["current_page"] = page_keys[selected_index]
+            st.rerun()
 
         st.markdown(f"<hr style='border-color:{COLORS['border']}; margin: 1rem 0;'>",
                     unsafe_allow_html=True)
@@ -221,23 +230,23 @@ def render_sidebar():
             badge_text  = "AI: Not configured"
             badge_icon  = "○"
 
-        st.markdown(f"""
-        <div style="padding: 0.5rem 0.75rem; border-radius: 6px;
-                    background: {COLORS['card']}; border: 1px solid {COLORS['border']};
-                    display: flex; align-items: center; gap: 0.5rem;">
-            <span style="color: {badge_color}; font-size: 0.85rem;">{badge_icon}</span>
-            <span style="color: {COLORS['text_muted']}; font-size: 0.78rem;">{badge_text}</span>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="padding:0.5rem 0.75rem;border-radius:6px;'
+            f'background:{COLORS["card"]};border:1px solid {COLORS["border"]};'
+            f'display:flex;align-items:center;gap:0.5rem;">'
+            f'<span style="color:{badge_color};font-size:0.85rem;">{badge_icon}</span>'
+            f'<span style="color:{COLORS["text_muted"]};font-size:0.78rem;">{badge_text}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
-        # Version footer
-        st.markdown(f"""
-        <div style="position: absolute; bottom: 1rem; left: 0; right: 0;
-                    text-align: center; color: {COLORS['text_muted']};
-                    font-size: 0.7rem;">
-            GreenTech v1.0.0
-        </div>
-        """, unsafe_allow_html=True)
+        # Version footer — below badge, no absolute positioning
+        st.markdown(
+            f'<div style="text-align:center;color:{COLORS["text_muted"]};'
+            f'font-size:0.7rem;margin-top:1rem;padding-bottom:0.5rem;">'
+            f'GreenTech v1.0.0</div>',
+            unsafe_allow_html=True,
+        )
 
 
 # ─── Page router ─────────────────────────────────────────────────────────────

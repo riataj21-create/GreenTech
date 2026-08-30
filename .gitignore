@@ -33,3 +33,9 @@ data/history.json
 
 # Logs
 *.log
+
+# Dev / debug scripts (not part of the app)
+test_phase*.py
+diagnose_voice*.py
+install_voices.py
+KIRO_DEPLOYMENT.md

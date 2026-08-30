@@ -26,3 +26,6 @@ scipy>=1.11.0
 
 # Phase 4 - Text-to-Speech (offline, Windows SAPI voices)
 pyttsx3>=2.90
+
+# Image analysis (crop disease detection via Gemini Vision)
+Pillow>=10.0.0
