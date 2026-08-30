@@ -1,59 +1,31 @@
-# 🌿 GreenTech — AI Farmer Advisory System
+# 🌱 GreenTech — AI Farmer Advisory System
 
-A multilingual AI-powered agricultural advisory app for the farmers.
-
----
+A multilingual AI-powered agricultural advisory system that helps farmers understand crop problems and receive practical guidance in their preferred language.
 
 ## ✨ Features
 
-- 🤖 **AI Advice** — Powered by OpenRouter / Google Gemini
+- 🤖 **AI Agricultural Advice** — AI-powered analysis of crop problems
 - 🌐 **5 Languages** — English, Telugu, Hindi, Tamil, Kannada
-- 🎤 **Voice and Image Input** — Speak your crop problem (Faster-Whisper) and upload image of your crop pronlem.
-- 🔊 **Read Aloud** — AI advice spoken back to you
-- 🌤️ **Live Weather** — Real-time  weather with farming tips
-- 📋 **History** — All past queries saved and searchable
+- 🎤 **Voice Input** — Speak your crop problem using speech-to-text
+- 🖼️ **Image Input** — Upload a crop image for analysis
+- 🔊 **Read Aloud** — Listen to the generated advice
+- 🌤️ **Live Weather** — Weather information with farming guidance
+- 📋 **History** — View previous queries and advice
 
----
+## 🛠️ Technology
+
+- **Frontend:** Streamlit
+- **AI:** OpenRouter
+- **Speech-to-Text:** Faster-Whisper
+- **Text-to-Speech:** Windows SAPI
+- **Weather:** OpenWeatherMap API
 
 ## 🚀 Run Locally
 
-### 1. Clone the repo
 ```bash
-git clone https://github.com/YOUR_USERNAME/GreenTech.git
+git clone https://github.com/riataj21-create/GreenTech.git
 cd GreenTech
-```
-
-### 2. Create virtual environment
-```bash
 python -m venv .venv
-.venv\Scripts\activate      # Windows
-```
-
-### 3. Install dependencies
-```bash
+.venv\Scripts\activate
 pip install -r requirements.txt
-
-
-### 4. Run the app
-```bash
 streamlit run main.py
-```
-
-Open **http://localhost:8501** in your browser.
-
-
----
-
-## 🌾 Built For
-
-Especially all the Farmers — providing AI-powered crop advice in local languages.
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend**: Streamlit
-- **AI**: OpenRouter (free) / Google Gemini
-- **Voice**: Faster-Whisper (speech-to-text)
-- **TTS**: Windows SAPI (text-to-speech)
-- **Weather**: OpenWeatherMap API
