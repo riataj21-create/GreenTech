@@ -46,7 +46,7 @@ Open **http://localhost:8501** in your browser.
 
 ## 🌾 Built For
 
-Farmers in **Madanapalle, Andhra Pradesh** — providing AI-powered crop advice in local languages.
+Especially all the Farmers — providing AI-powered crop advice in local languages.
 
 ---
 
