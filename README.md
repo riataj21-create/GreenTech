@@ -1,6 +1,6 @@
 # 🌿 GreenTech — AI Farmer Advisory System
 
-A multilingual AI-powered agricultural advisory app for Indian farmers, built for the **Madanapalle** region, Andhra Pradesh.
+A multilingual AI-powered agricultural advisory app for the farmers.
 
 ---
 
@@ -10,7 +10,7 @@ A multilingual AI-powered agricultural advisory app for Indian farmers, built fo
 - 🌐 **5 Languages** — English, Telugu, Hindi, Tamil, Kannada
 - 🎤 **Voice Input** — Speak your crop problem (Faster-Whisper)
 - 🔊 **Read Aloud** — AI advice spoken back to you
-- 🌤️ **Live Weather** — Real-time Madanapalle weather with farming tips
+- 🌤️ **Live Weather** — Real-time  weather with farming tips
 - 📋 **History** — All past queries saved and searchable
 
 ---
@@ -32,15 +32,9 @@ python -m venv .venv
 ### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
-```
 
-### 4. Add your API keys
-```bash
-copy .env.example .env
-# Open .env and fill in your keys
-```
 
-### 5. Run the app
+### 4. Run the app
 ```bash
 streamlit run main.py
 ```
