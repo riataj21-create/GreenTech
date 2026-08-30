@@ -1,0 +1,261 @@
+{
+  "_note": "Local agricultural knowledge layer. Used as supporting context for Gemini (Phase 2+). Does NOT restrict which crops are accepted.",
+  "crops": {
+    "rice": {
+      "aliases": ["paddy"],
+      "growing_conditions": {
+        "climate": "Tropical and subtropical",
+        "water": "Requires standing water or well-irrigated fields",
+        "soil": "Clay or loamy soil with good water retention",
+        "temperature_c": "20–37"
+      },
+      "common_problems": [
+        {
+          "name": "Nitrogen deficiency",
+          "symptoms": ["yellowing of older leaves", "pale green crop", "stunted growth"],
+          "notes": "Starts from lower leaves upward"
+        },
+        {
+          "name": "Blast disease",
+          "symptoms": ["diamond-shaped lesions on leaves", "brown bordered spots", "neck rot"],
+          "notes": "Caused by Magnaporthe oryzae fungus"
+        },
+        {
+          "name": "Brown plant hopper (BPH)",
+          "symptoms": ["yellowing", "wilting", "hopper burn"],
+          "notes": "Sucking pest at base of plant"
+        },
+        {
+          "name": "Sheath blight",
+          "symptoms": ["oval lesions on sheath", "white to brown patches", "lodging"],
+          "notes": "Caused by Rhizoctonia solani"
+        }
+      ],
+      "preventive_practices": [
+        "Maintain proper spacing for air circulation",
+        "Use certified disease-free seeds",
+        "Balanced fertilizer application",
+        "Field sanitation after harvest"
+      ]
+    },
+    "tomato": {
+      "aliases": [],
+      "growing_conditions": {
+        "climate": "Warm temperate",
+        "water": "Regular irrigation, avoid waterlogging",
+        "soil": "Well-drained loamy soil, pH 6.0–6.8",
+        "temperature_c": "21–29"
+      },
+      "common_problems": [
+        {
+          "name": "Early blight",
+          "symptoms": ["dark brown spots with concentric rings", "yellowing around spots", "defoliation"],
+          "notes": "Caused by Alternaria solani"
+        },
+        {
+          "name": "Late blight",
+          "symptoms": ["water-soaked lesions", "white mold on underside", "rapid browning"],
+          "notes": "Caused by Phytophthora infestans"
+        },
+        {
+          "name": "Blossom end rot",
+          "symptoms": ["dark, sunken spot at fruit base"],
+          "notes": "Calcium deficiency, often linked to irregular watering"
+        }
+      ],
+      "preventive_practices": [
+        "Crop rotation",
+        "Stake plants for airflow",
+        "Consistent watering schedule",
+        "Use resistant varieties where available"
+      ]
+    },
+    "cotton": {
+      "aliases": [],
+      "growing_conditions": {
+        "climate": "Semi-arid to tropical",
+        "water": "Moderate; drought-tolerant once established",
+        "soil": "Deep black cotton soil or alluvial soil",
+        "temperature_c": "21–35"
+      },
+      "common_problems": [
+        {
+          "name": "Bollworm",
+          "symptoms": ["holes in bolls", "damaged squares", "larvae inside bolls"],
+          "notes": "Helicoverpa armigera is the main pest"
+        },
+        {
+          "name": "Cotton leaf curl virus",
+          "symptoms": ["upward curling of leaves", "thickening of veins", "stunted growth"],
+          "notes": "Transmitted by whitefly"
+        }
+      ],
+      "preventive_practices": [
+        "Monitor pest populations regularly",
+        "Use Bt cotton where approved",
+        "Avoid excessive nitrogen"
+      ]
+    },
+    "wheat": {
+      "aliases": [],
+      "growing_conditions": {
+        "climate": "Temperate",
+        "water": "Moderate irrigation during critical growth stages",
+        "soil": "Well-drained loamy or clay-loam soil",
+        "temperature_c": "12–25"
+      },
+      "common_problems": [
+        {
+          "name": "Rust (yellow/brown/black)",
+          "symptoms": ["orange-yellow powdery pustules", "stripe rust on leaves"],
+          "notes": "Caused by Puccinia species"
+        },
+        {
+          "name": "Karnal bunt",
+          "symptoms": ["partial conversion of grain to black powder", "fishy smell"],
+          "notes": "Caused by Tilletia indica"
+        }
+      ],
+      "preventive_practices": [
+        "Use resistant varieties",
+        "Timely sowing",
+        "Fungicide seed treatment"
+      ]
+    },
+    "maize": {
+      "aliases": ["corn"],
+      "growing_conditions": {
+        "climate": "Tropical to temperate",
+        "water": "Regular; sensitive to drought at silking",
+        "soil": "Well-drained fertile loamy soil",
+        "temperature_c": "18–33"
+      },
+      "common_problems": [
+        {
+          "name": "Fall armyworm",
+          "symptoms": ["ragged feeding on leaves", "frass in whorl", "windowpane damage"],
+          "notes": "Spodoptera frugiperda"
+        },
+        {
+          "name": "Maize streak virus",
+          "symptoms": ["yellow streaks on leaves", "stunted plants"],
+          "notes": "Transmitted by leafhoppers"
+        }
+      ],
+      "preventive_practices": [
+        "Early planting to avoid peak pest pressure",
+        "Regular scouting",
+        "Balanced nutrition"
+      ]
+    },
+    "groundnut": {
+      "aliases": ["peanut"],
+      "growing_conditions": {
+        "climate": "Tropical and subtropical",
+        "water": "Moderate; drought-tolerant",
+        "soil": "Light sandy loam, well-drained",
+        "temperature_c": "25–30"
+      },
+      "common_problems": [
+        {
+          "name": "Tikka leaf spot (early and late blight)",
+          "symptoms": ["circular brown spots", "yellowing around spots", "defoliation"],
+          "notes": "Caused by Cercospora species"
+        },
+        {
+          "name": "Aflatoxin contamination",
+          "symptoms": ["moldy kernels", "off-colour pods"],
+          "notes": "Caused by Aspergillus flavus; food safety concern"
+        }
+      ],
+      "preventive_practices": [
+        "Harvest at correct moisture",
+        "Proper drying and storage",
+        "Fungicide application at early stages"
+      ]
+    },
+    "chilli": {
+      "aliases": ["pepper", "chili"],
+      "growing_conditions": {
+        "climate": "Tropical to subtropical",
+        "water": "Regular but avoid waterlogging",
+        "soil": "Well-drained loamy soil, pH 6.0–7.0",
+        "temperature_c": "20–30"
+      },
+      "common_problems": [
+        {
+          "name": "Anthracnose",
+          "symptoms": ["sunken lesions on fruit", "pinkish spore masses", "rotting"],
+          "notes": "Caused by Colletotrichum species"
+        },
+        {
+          "name": "Thrips",
+          "symptoms": ["silvery streaks on leaves", "leaf curling", "scarred fruit"],
+          "notes": "Main vector for TSWV virus"
+        }
+      ],
+      "preventive_practices": [
+        "Use disease-free transplants",
+        "Mulching to retain moisture",
+        "Sticky yellow traps for thrips monitoring"
+      ]
+    },
+    "banana": {
+      "aliases": [],
+      "growing_conditions": {
+        "climate": "Humid tropical",
+        "water": "High; needs consistent moisture",
+        "soil": "Rich well-drained loamy soil",
+        "temperature_c": "26–30"
+      },
+      "common_problems": [
+        {
+          "name": "Panama wilt (Fusarium wilt)",
+          "symptoms": ["yellowing of older leaves", "wilting", "brown vascular tissue"],
+          "notes": "Caused by Fusarium oxysporum f. sp. cubense; no chemical cure"
+        },
+        {
+          "name": "Sigatoka leaf spot",
+          "symptoms": ["yellow streaks developing into brown spots", "premature leaf death"],
+          "notes": "Caused by Mycosphaerella musicola"
+        }
+      ],
+      "preventive_practices": [
+        "Use disease-free planting material",
+        "Avoid waterlogging",
+        "Remove infected leaves promptly"
+      ]
+    },
+    "mango": {
+      "aliases": [],
+      "growing_conditions": {
+        "climate": "Tropical to subtropical",
+        "water": "Deep-rooted; moderate irrigation",
+        "soil": "Deep well-drained alluvial or laterite soil",
+        "temperature_c": "24–30"
+      },
+      "common_problems": [
+        {
+          "name": "Mango malformation",
+          "symptoms": ["malformed vegetative or floral shoots", "bunchy top appearance"],
+          "notes": "Caused by Fusarium mangiferae"
+        },
+        {
+          "name": "Anthracnose",
+          "symptoms": ["dark spots on leaves and fruit", "fruit rot"],
+          "notes": "Caused by Colletotrichum gloeosporioides"
+        },
+        {
+          "name": "Mango hopper",
+          "symptoms": ["sucking damage on inflorescence", "honeydew and sooty mould"],
+          "notes": "Idioscopus species"
+        }
+      ],
+      "preventive_practices": [
+        "Prune congested branches",
+        "Copper-based sprays before flowering",
+        "Remove and burn affected shoots"
+      ]
+    }
+  }
+}
