@@ -47,15 +47,6 @@ streamlit run main.py
 
 Open **http://localhost:8501** in your browser.
 
----
-
-## 🔑 API Keys Needed
-
-| Key | Where to get it | Free? |
-|-----|----------------|-------|
-| `OPENROUTER_API_KEY` | [openrouter.ai](https://openrouter.ai) | ✅ Free tier |
-| `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com/apikey) | ✅ Free tier |
-| `WEATHER_API_KEY` | [openweathermap.org](https://openweathermap.org/api) | ✅ Free tier |
 
 ---
 
