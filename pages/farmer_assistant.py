@@ -168,19 +168,26 @@ def _render_advice_card(result: dict, language: str):
 # ─── Voice section ────────────────────────────────────────────────────────────
 
 def _render_voice_section(language: str):
-    """
-    Push-to-talk:
-      ⏺ Start Recording  → mic opens, farmer speaks freely
-      ⏹ Stop & Transcribe → mic closes, Whisper runs,
-                            transcript auto-fills problem box
-                            and Get Advice fires immediately.
-    """
-    from services.voice_service import (
-        check_dependencies, start_recording, stop_recording,
-        transcribe_audio, is_recording,
-    )
+    try:
+        from services.voice_service import (
+            check_dependencies, start_recording, stop_recording,
+            transcribe_audio, is_recording,
+        )
+    except Exception:
+        st.markdown(
+            f"<div style='background:{COLORS['card']};border:1px solid {COLORS['border']};"
+            f"border-radius:12px;padding:1.2rem 1.6rem;margin-bottom:1rem;'>"
+            f"<div style='font-size:0.82rem;color:{COLORS['text_muted']};'>"
+            f"🎤 Voice input is not available in this environment. Use text input below.</div>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        return
 
-    deps = check_dependencies()
+    try:
+        deps = check_dependencies()
+    except Exception:
+        deps = {"ready": False, "message": "Voice input not available here. Use text input below."}
 
     st.markdown(
         f"<div style='background:{COLORS['card']};border:1px solid {COLORS['border']};"
@@ -375,9 +382,19 @@ def render():
 
     st.markdown("<div style='margin:1rem 0 0.5rem 0;'></div>", unsafe_allow_html=True)
 
-    # Voice section
-    _label("Voice Input  (optional — auto-submits after transcription)")
-    _render_voice_section(language)
+    # Voice section — only show if audio hardware is available (hidden on cloud)
+    deps = None
+    try:
+        from services.voice_service import check_dependencies
+        deps = check_dependencies()
+    except Exception:
+        deps = {"ready": False, "message": "Voice input not available in this environment."}
+
+    if deps and deps["ready"]:
+        _label("Voice Input  (optional — auto-submits after transcription)")
+        _render_voice_section(language)
+    else:
+        st.info("🎤 Voice input not available — use text input below.")
 
     # ── Auto-advice from voice transcript ─────────────────────────────────────
     # Fires immediately after Stop & Transcribe succeeds — no button needed.
@@ -411,107 +428,107 @@ def render():
     if uploaded_image is not None:
         col_img, col_analyze = st.columns([1, 1])
         with col_img:
-            st.image(uploaded_image, caption="Uploaded image", use_column_width=True)
+            st.image(uploaded_image, width="stretch")
         with col_analyze:
             st.markdown(
                 f"<div style='font-size:0.83rem;color:{COLORS['text_muted']};padding:0.5rem 0;'>"
-                f"Click <b>Analyze Image</b> to let AI describe the crop disease from this photo. "
-                f"The description will auto-fill the problem box below.</div>",
+                f"AI will look at this photo and describe the crop disease. "
+                f"Click Analyze — description fills the problem box below.</div>",
                 unsafe_allow_html=True,
             )
-            analyze_clicked = st.button(
-                "🔍 Analyze Image", key="fa_analyze_img_btn", use_container_width=True
-            )
+            if st.button("🔍 Analyze Image", key="fa_analyze_img_btn", use_container_width=True):
+                if not ai_configured():
+                    st.error("AI API key not configured.", icon="🔑")
+                else:
+                    with st.spinner("🔍 Analyzing crop image..."):
+                        try:
+                            import base64, io
+                            import PIL.Image
+                            from utils.config import GEMINI_API_KEY, OPENROUTER_API_KEY, cloudflare_configured
+                            from utils.config import CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_VISION_MODEL
 
-        if analyze_clicked:
-            if not ai_configured():
-                st.error("AI API key not configured.", icon="🔑")
-            else:
-                with st.spinner("🔍 Analyzing crop image with AI Vision..."):
-                    try:
-                        import base64, os
-                        from utils.config import GEMINI_API_KEY, OPENROUTER_API_KEY, AI_PROVIDER
+                            image_bytes = uploaded_image.getvalue()
+                            mime_type   = uploaded_image.type or "image/jpeg"
+                            b64_image   = base64.b64encode(image_bytes).decode("utf-8")
+                            description = None
+                            errors      = []
 
-                        # Read image bytes and encode
-                        image_bytes = uploaded_image.getvalue()
-                        b64_image   = base64.b64encode(image_bytes).decode("utf-8")
-                        mime_type   = uploaded_image.type or "image/jpeg"
-
-                        description = None
-
-                        # Try Gemini Vision first
-                        if GEMINI_API_KEY:
-                            try:
-                                import google.generativeai as genai
-                                genai.configure(api_key=GEMINI_API_KEY)
-                                model = genai.GenerativeModel("gemini-1.5-flash")
-                                import PIL.Image, io
-                                pil_img = PIL.Image.open(io.BytesIO(image_bytes))
-                                response = model.generate_content([
-                                    "You are an agricultural expert. Look at this crop image carefully. "
-                                    "Describe in 2-3 sentences: what crop it is (if visible), "
-                                    "what disease, pest, or problem you can see, and the visible symptoms. "
-                                    "Be specific and practical for a farmer.",
-                                    pil_img
-                                ])
-                                description = response.text.strip()
-                            except Exception:
-                                description = None
-
-                        # Fallback: OpenRouter vision (if Gemini failed)
-                        if not description and OPENROUTER_API_KEY:
-                            try:
-                                import requests as req
-                                headers = {
-                                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                                    "Content-Type": "application/json",
-                                }
-                                payload = {
-                                    "model": "google/gemini-flash-1.5",
-                                    "messages": [{
-                                        "role": "user",
-                                        "content": [
-                                            {
-                                                "type": "text",
-                                                "text": (
-                                                    "You are an agricultural expert. Look at this crop image. "
-                                                    "Describe in 2-3 sentences: what crop it is, what disease "
-                                                    "or pest problem you see, and the visible symptoms. "
-                                                    "Be specific and practical for a farmer."
-                                                )
-                                            },
-                                            {
-                                                "type": "image_url",
-                                                "image_url": {
-                                                    "url": f"data:{mime_type};base64,{b64_image}"
-                                                }
-                                            }
-                                        ]
-                                    }]
-                                }
-                                r = req.post(
-                                    "https://openrouter.ai/api/v1/chat/completions",
-                                    headers=headers, json=payload, timeout=30
-                                )
-                                r.raise_for_status()
-                                description = r.json()["choices"][0]["message"]["content"].strip()
-                            except Exception:
-                                description = None
-
-                        if description:
-                            st.session_state["fa_problem_input"] = description
-                            st.success("✅ Image analyzed! Problem description filled below.", icon="✅")
-                            st.rerun()
-                        else:
-                            st.error(
-                                "Could not analyze image. Make sure GEMINI_API_KEY is set in .env "
-                                "and try again, or describe the problem manually.", icon="⚠️"
+                            VISION_PROMPT = (
+                                "You are an agricultural expert. Look at this crop image carefully. "
+                                "In 2-3 sentences describe: what crop it is, what disease or pest "
+                                "problem is visible, and the symptoms. Be specific and practical."
                             )
 
-                    except Exception as e:
-                        st.error(f"Image analysis failed: {str(e)}", icon="⚠️")
+                            # ── 1. Gemini Vision ──────────────────────────────
+                            if GEMINI_API_KEY and not description:
+                                try:
+                                    from google import genai as google_genai
+                                    client = google_genai.Client(api_key=GEMINI_API_KEY)
+                                    pil_img = PIL.Image.open(io.BytesIO(image_bytes))
+                                    response = client.models.generate_content(
+                                        model="gemini-3.6-flash",
+                                        contents=[VISION_PROMPT, pil_img]
+                                    )
+                                    description = response.text.strip()
+                                except Exception as eg:
+                                    err = str(eg)
+                                    if "429" in err or "quota" in err.lower():
+                                        errors.append("Gemini: quota exceeded")
+                                    else:
+                                        errors.append(f"Gemini: {err[:60]}")
+                                    description = None
 
-    # ── Problem text area (text path) ─────────────────────────────────────────
+                            # ── 2. Cloudflare Vision (free, 10k/day) ──────────
+                            if cloudflare_configured() and not description:
+                                try:
+                                    import requests as req
+                                    img_bytes_list = list(image_bytes)
+                                    r = req.post(
+                                        f"https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/run/{CLOUDFLARE_VISION_MODEL}",
+                                        headers={"Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}", "Content-Type": "application/json"},
+                                        json={"prompt": VISION_PROMPT, "image": img_bytes_list},
+                                        timeout=30,
+                                    )
+                                    if r.status_code == 200:
+                                        description = r.json()["result"]["response"].strip()
+                                    else:
+                                        errors.append(f"Cloudflare: HTTP {r.status_code}")
+                                except Exception as ce:
+                                    errors.append(f"Cloudflare: {str(ce)[:60]}")
+                                    description = None
+
+                            # ── 3. OpenRouter Vision ──────────────────────────
+                            if OPENROUTER_API_KEY and not description:
+                                try:
+                                    import requests as req
+                                    r = req.post(
+                                        "https://openrouter.ai/api/v1/chat/completions",
+                                        headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"},
+                                        json={"model": "google/gemini-2.5-flash",
+                                              "messages": [{"role": "user", "content": [
+                                                  {"type": "text", "text": VISION_PROMPT},
+                                                  {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{b64_image}"}}
+                                              ]}]},
+                                        timeout=30,
+                                    )
+                                    r.raise_for_status()
+                                    description = r.json()["choices"][0]["message"]["content"].strip()
+                                except Exception as oe:
+                                    errors.append(f"OpenRouter: {str(oe)[:60]}")
+                                    description = None
+
+                            if description:
+                                st.session_state["fa_problem_input"] = description
+                                st.success("✅ Image analyzed! Description filled below.")
+                                st.rerun()
+                            else:
+                                detail = " | ".join(errors) if errors else "All vision providers failed"
+                                st.error(f"Could not analyze image — {detail}", icon="⚠️")
+
+                        except Exception as e:
+                            st.error(f"Image analysis failed: {str(e)}", icon="⚠️")
+
+    # ── Problem text area ─────────────────────────────────────────────────────
     _label("Describe the Problem  (or use Voice / Image above)")
 
     problem_val = st.text_area(

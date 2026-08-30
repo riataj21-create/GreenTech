@@ -5,6 +5,9 @@ Run with: streamlit run main.py
 
 import streamlit as st
 from utils.config import APP_NAME, APP_SUBTITLE, COLORS
+import warnings
+# Suppress Gemini AFC recommendation warning — not relevant to our usage pattern
+warnings.filterwarnings("ignore", message=".*AFC.*")
 
 # ─── Page configuration (must be first Streamlit call) ───────────────────────
 st.set_page_config(

@@ -107,9 +107,11 @@ def check_dependencies() -> dict:
 
     try:
         import sounddevice as sd
+        # Also test that audio system is actually accessible (fails on cloud)
+        sd.query_devices()
         status["sounddevice"] = True
-    except ImportError:
-        status["message"] = "sounddevice is not installed. Run: pip install sounddevice"
+    except (ImportError, OSError, Exception, BaseException):
+        status["message"] = "Voice input not available (no audio hardware). Use text input instead."
         return status
 
     try:

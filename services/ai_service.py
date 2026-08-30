@@ -1,19 +1,16 @@
 """
-GreenTech - AI Service (Phase 2 + OpenRouter)
-Handles all AI API interactions:
-  - Multi-provider support (Gemini & OpenRouter)
-  - client initialisation
-  - agricultural context lookup
-  - prompt construction
-  - response generation
-  - error handling
+GreenTech - AI Service (Multi-provider with Groq as primary)
+Provider priority for text advice:
+  1. Groq        (openai/gpt-oss-120b) — fastest
+  2. OpenRouter  (openrouter/free)     — fallback
+  3. Gemini      (gemini-3.6-flash)    — final fallback
 
-The UI must never contain AI logic.
+Vision is handled separately in farmer_assistant.py.
 API keys are never returned or logged.
 """
 
 import json
-import time
+import sys
 import pathlib
 import requests
 from typing import Optional
@@ -23,64 +20,35 @@ from google.genai import types as genai_types
 
 from utils.config import (
     GEMINI_API_KEY, GEMINI_MODEL, AGRI_FILE, LANGUAGES,
-    OPENROUTER_API_KEY, OPENROUTER_MODEL, AI_PROVIDER,
-    gemini_configured, openrouter_configured, ai_configured
+    OPENROUTER_API_KEY, OPENROUTER_MODEL,
+    GROQ_API_KEY, GROQ_TEXT_MODEL,
+    gemini_configured, openrouter_configured, groq_configured, ai_configured,
 )
 
 
 # ─── Errors ──────────────────────────────────────────────────────────────────
 
 class AIServiceError(Exception):
-    """Raised for known, user-displayable AI service failures."""
-
+    pass
 
 class AINotConfiguredError(AIServiceError):
-    """Raised when no API key is present."""
+    pass
 
 
-# ─── Provider Detection ───────────────────────────────────────────────────────
+# ─── Groq call (primary) ──────────────────────────────────────────────────────
 
-def _get_active_provider() -> str:
-    """
-    Return the active AI provider based on configuration.
-    Returns 'openrouter', 'gemini', or raises AINotConfiguredError.
-    """
-    provider = AI_PROVIDER.lower()
-    
-    if provider == "openrouter" and openrouter_configured():
-        return "openrouter"
-    elif provider == "gemini" and gemini_configured():
-        return "gemini"
-    elif provider == "openrouter" and not openrouter_configured():
-        # Fallback to Gemini if OpenRouter not configured
-        if gemini_configured():
-            return "gemini" 
-        raise AINotConfiguredError(
-            "OpenRouter API key is not configured and Gemini fallback unavailable. "
-            "Add OPENROUTER_API_KEY or GEMINI_API_KEY to your .env file."
-        )
-    elif provider == "gemini" and not gemini_configured():
-        # Fallback to OpenRouter if Gemini not configured  
-        if openrouter_configured():
-            return "openrouter"
-        raise AINotConfiguredError(
-            "Gemini API key is not configured and OpenRouter fallback unavailable. "
-            "Add GEMINI_API_KEY or OPENROUTER_API_KEY to your .env file."
-        )
-    else:
-        # Unknown provider or no keys configured
-        if not ai_configured():
-            raise AINotConfiguredError(
-                "No AI provider configured. "
-                "Add GEMINI_API_KEY or OPENROUTER_API_KEY to your .env file."
-            )
-        # Default to any available provider
-        if openrouter_configured():
-            return "openrouter"
-        elif gemini_configured():
-            return "gemini"
-        else:
-            raise AINotConfiguredError("No AI provider available.")
+def _call_groq(prompt: str) -> dict:
+    """Call Groq. Returns {"success": True, "text": ..., "model": ..., "provider": "groq"} or error."""
+    from services.groq_service import call_groq_text
+    result = call_groq_text(prompt, max_tokens=1500, temperature=0.3)
+    if result["success"]:
+        return {
+            "success": True,
+            "text": result["text"],
+            "model": GROQ_TEXT_MODEL,
+            "provider": "groq",
+        }
+    return {"success": False, "error": result["error"]}
 
 
 # ─── Gemini Client (lazy singleton) ───────────────────────────────────────────
@@ -335,28 +303,9 @@ def get_agricultural_advice(
     timeout_seconds: int = 30,
 ) -> dict:
     """
-    Get an AI agricultural advisory response from the active provider (OpenRouter or Gemini).
-
-    Returns a dict:
-        {
-            "success": True,
-            "text": "<full advice text>",
-            "crop": crop,
-            "language": language,
-            "model": model_name,
-            "provider": "openrouter|gemini",
-        }
-
-    On failure returns:
-        {
-            "success": False,
-            "error": "<user-friendly message>",
-            "crop": crop,
-            "language": language,
-        }
-
-    Never raises — all exceptions are caught and returned as error dicts.
-    API keys are never included in the return value.
+    Get AI agricultural advice.
+    Provider waterfall: Groq → OpenRouter → Gemini.
+    Never raises — all exceptions return error dicts.
     """
     crop    = crop.strip()
     problem = problem.strip()
@@ -365,35 +314,42 @@ def get_agricultural_advice(
         return {"success": False, "error": "Please enter the crop name.", "crop": crop, "language": language}
     if not problem:
         return {"success": False, "error": "Please describe the problem.", "crop": crop, "language": language}
-
-    try:
-        provider = _get_active_provider()
-    except AINotConfiguredError as e:
-        return {"success": False, "error": str(e), "crop": crop, "language": language}
+    if not ai_configured():
+        return {"success": False, "error": "No AI provider configured. Add GROQ_API_KEY, OPENROUTER_API_KEY or GEMINI_API_KEY to .env.", "crop": crop, "language": language}
 
     agri_context = _get_crop_context(crop)
     prompt       = _build_prompt(crop, problem, language, agri_context)
 
-    if provider == "openrouter":
+    errors = []
+
+    # ── 1. Groq (fastest) ─────────────────────────────────────────────────────
+    if groq_configured():
+        result = _call_groq(prompt)
+        if result["success"]:
+            return {
+                "success": True,
+                "text": result["text"],
+                "crop": crop, "language": language,
+                "model": result["model"], "provider": "groq",
+            }
+        errors.append(f"Groq: {result['error']}")
+        print(f"[GreenTech ai_service] Groq failed: {result['error']} — trying OpenRouter", file=sys.stderr)
+
+    # ── 2. OpenRouter (fallback) ──────────────────────────────────────────────
+    if openrouter_configured():
         result = _call_openrouter(prompt)
         if result["success"]:
             return {
                 "success": True,
                 "text": result["text"],
-                "crop": crop,
-                "language": language,
-                "model": result["model"],
-                "provider": "openrouter",
+                "crop": crop, "language": language,
+                "model": result["model"], "provider": "openrouter",
             }
-        else:
-            return {
-                "success": False,
-                "error": result["error"],
-                "crop": crop,
-                "language": language,
-            }
-    
-    elif provider == "gemini":
+        errors.append(f"OpenRouter: {result['error']}")
+        print(f"[GreenTech ai_service] OpenRouter failed: {result['error']} — trying Gemini", file=sys.stderr)
+
+    # ── 3. Gemini (final fallback) ────────────────────────────────────────────
+    if gemini_configured():
         try:
             client = _get_gemini_client()
             response = client.models.generate_content(
@@ -404,103 +360,60 @@ def get_agricultural_advice(
                     max_output_tokens=2048,
                 ),
             )
-
             text = response.text
-            if not text or not text.strip():
+            if text and text.strip():
                 return {
-                    "success": False,
-                    "error": "The AI returned an empty response. Please try again.",
-                    "crop": crop,
-                    "language": language,
+                    "success": True,
+                    "text": text.strip(),
+                    "crop": crop, "language": language,
+                    "model": GEMINI_MODEL, "provider": "gemini",
                 }
-
-            return {
-                "success": True,
-                "text": text.strip(),
-                "crop": crop,
-                "language": language,
-                "model": GEMINI_MODEL,
-                "provider": "gemini",
-            }
-
+            errors.append("Gemini: empty response")
         except Exception as e:
             err_str = str(e)
-
-            # Translate common API errors into friendly messages
-            if "API_KEY_INVALID" in err_str or "api key" in err_str.lower():
-                msg = "The Gemini API key is invalid. Please check your .env file."
-            elif "QUOTA_EXCEEDED" in err_str or "quota" in err_str.lower():
-                msg = (
-                    "Gemini API quota exceeded. This usually means:\n"
-                    "• Free tier daily limit reached - wait 24 hours or upgrade to paid tier\n" 
-                    "• Too many requests per minute - wait a few minutes and try again\n"
-                    "• Billing account needs setup for continued usage"
-                )
-            elif "RATE_LIMIT" in err_str or "rate" in err_str.lower():
-                msg = "Too many requests. Please wait a few seconds and try again."
-            elif "timeout" in err_str.lower() or "timed out" in err_str.lower():
-                msg = f"The request timed out after {timeout_seconds}s. Please try again."
-            elif "model" in err_str.lower() and "not found" in err_str.lower():
-                msg = f"Model '{GEMINI_MODEL}' is not available. Check GEMINI_MODEL in your .env file."
-            elif "PERMISSION_DENIED" in err_str:
-                msg = "Permission denied by Gemini API. Verify your API key has the correct permissions."
+            if "429" in err_str or "quota" in err_str.lower():
+                errors.append("Gemini: quota exceeded")
+            elif "API_KEY_INVALID" in err_str:
+                errors.append("Gemini: invalid API key")
             else:
-                # Avoid leaking raw tracebacks — log the real error to stderr for debugging
-                import sys
-                print(f"[GreenTech ai_service error] {err_str}", file=sys.stderr)
-                msg = "An error occurred while contacting the AI service. Please try again."
+                errors.append(f"Gemini: {err_str[:80]}")
+            print(f"[GreenTech ai_service] Gemini failed: {err_str[:100]}", file=sys.stderr)
 
-            return {"success": False, "error": msg, "crop": crop, "language": language}
-    
-    else:
-        return {
-            "success": False,
-            "error": f"Unknown AI provider: {provider}",
-            "crop": crop,
-            "language": language,
-        }
+    # All providers failed
+    return {
+        "success": False,
+        "error": "All AI providers failed. " + " | ".join(errors),
+        "crop": crop, "language": language,
+    }
 
 
 # ─── Status check ─────────────────────────────────────────────────────────────
 
 def check_ai_status() -> dict:
     """
-    Quick connectivity check. Tests the active AI provider.
-    Returns {"ok": True/False, "message": "...", "provider": "..."}.
-    Never returns the API key.
+    Returns status of the first available provider.
     """
-    try:
-        provider = _get_active_provider()
-    except AINotConfiguredError as e:
-        return {"ok": False, "message": str(e), "provider": "none"}
-    
-    if provider == "openrouter":
-        # Test OpenRouter API
-        result = _call_openrouter("Reply with exactly one word: OK")
-        if result["success"] and "ok" in result["text"].lower():
-            return {"ok": True, "message": f"OpenRouter API connected. Model: {OPENROUTER_MODEL}", "provider": "openrouter"}
-        else:
-            return {"ok": False, "message": f"OpenRouter API error: {result.get('error', 'Unknown error')}", "provider": "openrouter"}
-    
-    elif provider == "gemini":
-        # Test Gemini API
+    from services.groq_service import check_groq_status
+    if groq_configured():
+        return check_groq_status()
+    if openrouter_configured():
+        result = _call_openrouter("Reply with one word: OK")
+        ok = result["success"] and bool(result.get("text"))
+        return {
+            "ok": ok,
+            "message": f"OpenRouter connected. Model: {OPENROUTER_MODEL}" if ok else result.get("error",""),
+            "provider": "openrouter",
+        }
+    if gemini_configured():
         try:
             client = _get_gemini_client()
             response = client.models.generate_content(
                 model=GEMINI_MODEL,
-                contents="Reply with exactly one word: OK",
+                contents="Reply with one word: OK",
                 config=genai_types.GenerateContentConfig(max_output_tokens=10),
             )
             if response.text:
-                return {"ok": True, "message": f"Gemini API connected. Model: {GEMINI_MODEL}", "provider": "gemini"}
-            return {"ok": False, "message": "API responded but returned empty text.", "provider": "gemini"}
-        except AINotConfiguredError:
-            return {"ok": False, "message": "API key not configured.", "provider": "gemini"}
+                return {"ok": True, "message": f"Gemini connected. Model: {GEMINI_MODEL}", "provider": "gemini"}
         except Exception as e:
-            err = str(e)
-            if "API_KEY_INVALID" in err or "api key" in err.lower():
-                return {"ok": False, "message": "API key is invalid.", "provider": "gemini"}
-            return {"ok": False, "message": "Could not connect to Gemini API.", "provider": "gemini"}
-    
-    else:
-        return {"ok": False, "message": f"Unknown provider: {provider}", "provider": provider}
+            return {"ok": False, "message": str(e)[:80], "provider": "gemini"}
+    return {"ok": False, "message": "No AI provider configured.", "provider": "none"}

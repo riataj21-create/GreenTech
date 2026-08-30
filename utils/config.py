@@ -38,26 +38,43 @@ GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL:   str = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
 
-# ─── OpenRouter (Alternative AI Provider) ─────────────────────────────────────
+# ─── OpenRouter (Fallback AI Provider) ────────────────────────────────────────
 
 OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_MODEL:   str = os.getenv("OPENROUTER_MODEL", "openrouter/free")
-AI_PROVIDER:        str = os.getenv("AI_PROVIDER", "gemini").lower()
+
+
+# ─── Groq (Primary fast provider — text + audio) ──────────────────────────────
+
+GROQ_API_KEY:     str = os.getenv("GROQ_API_KEY", "")
+GROQ_TEXT_MODEL:  str = os.getenv("GROQ_TEXT_MODEL", "openai/gpt-oss-120b")
+GROQ_AUDIO_MODEL: str = os.getenv("GROQ_AUDIO_MODEL", "whisper-large-v3-turbo")
+
+# Provider priority: groq → openrouter → gemini
+AI_PROVIDER: str = os.getenv("AI_PROVIDER", "groq").lower()
 
 
 def gemini_configured() -> bool:
-    """Return True if a Gemini API key is present in the environment."""
     return bool(GEMINI_API_KEY)
 
-
 def openrouter_configured() -> bool:
-    """Return True if an OpenRouter API key is present in the environment."""
     return bool(OPENROUTER_API_KEY)
 
+def groq_configured() -> bool:
+    return bool(GROQ_API_KEY)
 
 def ai_configured() -> bool:
-    """Return True if any AI provider is configured."""
-    return gemini_configured() or openrouter_configured()
+    return groq_configured() or openrouter_configured() or gemini_configured()
+
+
+# ─── Cloudflare Workers AI (vision) ──────────────────────────────────────────
+
+CLOUDFLARE_API_TOKEN:    str = os.getenv("CLOUDFLARE_API_TOKEN", "")
+CLOUDFLARE_ACCOUNT_ID:   str = os.getenv("CLOUDFLARE_ACCOUNT_ID", "")
+CLOUDFLARE_VISION_MODEL: str = os.getenv("CLOUDFLARE_VISION_MODEL", "@cf/meta/llama-3.2-11b-vision-instruct")
+
+def cloudflare_configured() -> bool:
+    return bool(CLOUDFLARE_API_TOKEN) and bool(CLOUDFLARE_ACCOUNT_ID)
 
 
 # ─── Weather API (Madanapalli) ───────────────────────────────────────────────

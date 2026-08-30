@@ -1,31 +1,25 @@
 # GreenTech Dependencies
+
 # UI framework
 streamlit>=1.38.0
 
 # Environment variable loading
 python-dotenv==1.0.1
 
-# Google GenAI SDK (Phase 2+) - pin below 3.0.0 per upstream AFC breaking change warning
+# Google GenAI SDK
 google-genai>=1.16.0,<3.0.0
 
-# HTTP requests for OpenRouter API
+# HTTP requests (OpenRouter + Weather API)
 requests>=2.31.0
 
-# Weather API integration
-requests>=2.31.0
-
-# Phase 3 - Voice input
-# Microphone recording (no FFmpeg needed - feeds numpy arrays directly)
+# Voice input
 sounddevice>=0.4.6
-# Audio file I/O (WAV save/load)
 soundfile>=0.12.1
-# Multilingual speech-to-text
 faster-whisper>=1.0.0
-# Audio resampling (for native->16kHz conversion)
 scipy>=1.11.0
 
-# Phase 4 - Text-to-Speech (offline, Windows SAPI voices)
+# Text-to-Speech
 pyttsx3>=2.90
 
-# Image analysis (crop disease detection via Gemini Vision)
+# Image analysis
 Pillow>=10.0.0
