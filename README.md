@@ -8,7 +8,7 @@ A multilingual AI-powered agricultural advisory app for the farmers.
 
 - 🤖 **AI Advice** — Powered by OpenRouter / Google Gemini
 - 🌐 **5 Languages** — English, Telugu, Hindi, Tamil, Kannada
-- 🎤 **Voice Input** — Speak your crop problem (Faster-Whisper)
+- 🎤 **Voice and Image Input** — Speak your crop problem (Faster-Whisper) and upload image of your crop pronlem.
 - 🔊 **Read Aloud** — AI advice spoken back to you
 - 🌤️ **Live Weather** — Real-time  weather with farming tips
 - 📋 **History** — All past queries saved and searchable
